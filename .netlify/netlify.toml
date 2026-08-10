@@ -1,0 +1,28 @@
+plugins = []
+headers = []
+redirects = []
+
+[functions]
+
+[functions."*"]
+
+[build]
+publish = "C:\\Users\\CDVDaio\\Downloads\\VAICE\\mapa-cultural---atividades-próximas\\dist"
+publishOrigin = "ui"
+commandOrigin = "ui"
+base = "C:\\Users\\CDVDaio\\Downloads\\VAICE\\mapa-cultural---atividades-próximas"
+command = "npm run build"
+
+[build.environment]
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]

@@ -1,0 +1,10 @@
+{
+  "name": "ÓRBITA CULTURAL",
+  "description": "Plataforma interativa de descoberta, divulgação e mapeamento de atividades culturais com base em localização.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

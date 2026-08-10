@@ -1,0 +1,44 @@
+{
+  "entities": {
+    "events": {
+      "title": "events",
+      "description": "Cultural events collection synchronized across devices",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "dateRange": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "address": { "type": "string" },
+        "cityRegion": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "image": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewsCount": { "type": "number" },
+        "isVirtual": { "type": "boolean" },
+        "isPaid": { "type": "boolean" },
+        "price": { "type": "string" },
+        "organizer": { "type": "string" },
+        "pinColor": { "type": "string" },
+        "isHappeningNow": { "type": "boolean" }
+      },
+      "required": ["id", "title", "category", "lat", "lng"]
+    },
+    "reviews": {
+      "title": "reviews",
+      "description": "Reviews left by users for cultural events",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "eventId": { "type": "string" },
+        "author": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["id", "eventId", "author", "rating", "comment"]
+    }
+  }
+}
