@@ -20,7 +20,8 @@ import { EventQuizModal } from './components/EventQuizModal';
 import { GeocodingService } from './services/aggregator/geocodingService';
 import { buildFallbackEvents } from './data/mockEvents';
 import { isEventPast } from './utils/dateUtils';
-import { Sparkles, PlusCircle } from 'lucide-react';
+import { listSupabaseEvents, discoverSupabaseEvents } from './lib/supabase';
+import { Sparkles, CirclePlus as PlusCircle } from 'lucide-react';
 import { 
   subscribeFirestoreEvents, 
   createFirestoreEvent, 
@@ -306,40 +307,36 @@ export default function App() {
 
   const loadPersistedEvents = async () => {
     try {
-      const res = await fetch('/api/events/saved');
-      if (res.ok) {
-        const contentType = res.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
-          const data = await res.json();
-          let savedEvents = Array.isArray(data?.events) ? data.events : [];
+      const savedEvents = await listSupabaseEvents();
+      if (savedEvents.length >= 0) {
 
           if (savedEvents.length > 0) {
             const pinColors = ['purple', 'orange', 'green', 'red', 'blue', 'yellow'];
             const realEvents: CulturalEvent[] = savedEvents.map((c: any, i: number) => {
-              const geocoded = GeocodingService.geocodeAddress(c.address || '', c.cityRegion || 'Campinas - SP');
+              const geocoded = GeocodingService.geocodeAddress(String(c.address || ''), String(c.city_region || c.cityRegion || 'Campinas - SP'));
 
               return {
-                id: `saved-event-${String(c.sourceUrl || c.title || i).replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${i}`,
-                title: c.title,
-                dateRange: c.dateRange,
-                category: normalizeCategory(c.category),
-                description: c.description || 'Programação oficial divulgada na fonte original.',
-                address: c.address,
-                cityRegion: c.cityRegion || 'Campinas - SP',
-                lat: geocoded.lat,
-                lng: geocoded.lng,
-                image: getEventImage(c.image, normalizeCategory(c.category), c.title || `${i}`),
+                id: `saved-event-${String(c.source_url || c.sourceUrl || c.title || i).replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${i}`,
+                title: String(c.title || 'Evento cultural'),
+                dateRange: String(c.date_range || c.dateRange || ''),
+                category: normalizeCategory(String(c.category || 'Cultura')),
+                description: String(c.description || 'Programação oficial divulgada na fonte original.'),
+                address: String(c.address || ''),
+                cityRegion: String(c.city_region || c.cityRegion || 'Campinas - SP'),
+                lat: Number(c.lat) || geocoded.lat,
+                lng: Number(c.lng) || geocoded.lng,
+                image: getEventImage(String(c.image || ''), normalizeCategory(String(c.category || 'Cultura')), String(c.title || `${i}`)),
                 rating: 0,
                 reviewsCount: 0,
-                isVirtual: c.isVirtual || false,
-                isPaid: c.isPaid || false,
-                price: c.price || 'Gratuito',
+                isVirtual: Boolean(c.is_virtual ?? c.isVirtual),
+                isPaid: Boolean(c.is_paid ?? c.isPaid),
+                price: String(c.price || 'Gratuito'),
                 distanceKm: 2.8,
                 travelTimeMinutes: 8,
-                organizer: c.organizer || 'Organizador Responsável',
+                organizer: String(c.organizer || 'Organizador Responsável'),
                 isAiGenerated: false,
-                sourceUrl: normalizeSourceUrl(c.sourceUrl),
-                pinColor: pinColors[i % pinColors.length],
+                sourceUrl: normalizeSourceUrl(String(c.source_url || c.sourceUrl || '')),
+                pinColor: pinColors[i % pinColors.length] as CulturalEvent['pinColor'],
               };
             });
 
@@ -359,7 +356,6 @@ export default function App() {
             return;
           }
         }
-      }
     } catch (e) {
       console.log('Sem backend de API (Netlify / Hospedagem Estática). Usando armazenamento local e fallback.');
     }
@@ -376,11 +372,7 @@ export default function App() {
 
   const syncAggregatedEvents = async () => {
     try {
-      await fetch('/api/aggregator/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: 'Auto Discovery Boot' }),
-      });
+      await discoverSupabaseEvents(`${searchQuery || 'eventos culturais'} Brasil 2026`);
     } catch (e) {
       console.log("Aggregator sync check completed.");
     }
@@ -401,18 +393,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    clearAllAppEvents();
-
-    const unsubscribe = subscribeFirestoreEvents((firestoreEvents) => {
-      if (firestoreEvents && firestoreEvents.length > 0) {
-        const deduplicated = deduplicateEvents(firestoreEvents);
-        setEvents(deduplicated);
-      } else {
-        setEvents([]);
-      }
-    });
-
-    return () => unsubscribe();
+    void loadPersistedEvents();
   }, []);
 
   // Request location on load
@@ -459,12 +440,7 @@ export default function App() {
     setSyncToast('🤖 Limpando eventos e repesquisando do 0 via IA...');
 
     try {
-      await fetch('/api/aggregator/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: 'Fresh AI Location Research' }),
-      });
-      await fetch('/api/ai/seed-events', { method: 'POST' });
+      await discoverSupabaseEvents(`${searchQuery || 'eventos culturais'} Brasil 2026`);
     } catch (e) {
       console.log('AI crawler executed.');
     }
